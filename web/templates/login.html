@@ -1,0 +1,17 @@
+{{define "content"}}
+<section class="login-wrap">
+  <div class="login-card">
+    <div class="login-mark">{{template "mark" .}}</div>
+    <h1>Willkommen bei dropy</h1>
+    <p class="lede">Melde dich an, um statische HTML-Seiten zu deployen und zu verwalten.</p>
+    <a class="btn btn-primary btn-block" href="/login">
+      {{template "icon-lock" .}}
+      Mit Pocket-ID anmelden
+    </a>
+    {{if .DevAuth}}
+    <a class="btn btn-block" href="/dev-login">Dev-Login (nur Entwicklung)</a>
+    {{end}}
+    <p class="login-foot">Nur freigegebene Konten erhalten Zugriff.</p>
+  </div>
+</section>
+{{end}}

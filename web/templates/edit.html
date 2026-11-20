@@ -1,0 +1,169 @@
+{{define "content"}}
+<div class="page-head">
+  <div>
+    <a class="back" href="/">{{template "icon-arrow-left" .}} Alle Seiten</a>
+    <h1>{{if .Site.Title}}{{.Site.Title}}{{else}}{{.Site.Path}}{{end}}</h1>
+    <p class="sub">
+      <a class="mono" href="{{siteURL .PublicBase .Site.Path}}" target="_blank" rel="noopener">{{siteURL .PublicBase .Site.Path}}</a>
+      {{with .Site.Current}}
+      <span class="sep">·</span>
+      <span class="num">{{bytes .Size}}</span>
+      <span class="sep">·</span>
+      <span class="num">{{date .CreatedAt}}</span>
+      {{end}}
+      <span class="sep">·</span>
+      {{if eq .Site.AccessMode "public"}}
+      <span class="access open">{{template "icon-unlock" .}} {{modeLabel .Site.AccessMode}}</span>
+      {{else}}
+      <span class="access">{{template "icon-lock" .}} {{modeLabel .Site.AccessMode}}</span>
+      {{end}}
+    </p>
+  </div>
+  <div class="head-actions">
+    <a class="btn" href="/sites/{{.Site.ID}}/versions">{{template "icon-layers" .}} Versionen</a>
+    <a class="btn" href="{{siteURL .PublicBase .Site.Path}}" target="_blank" rel="noopener">{{template "icon-external" .}} Öffnen</a>
+  </div>
+</div>
+
+<div class="edit-grid">
+  <section class="panel" aria-labelledby="edit-title">
+    <div class="panel-head">
+      <h2 id="edit-title">Seite bearbeiten</h2>
+      <span class="hint">Jede Veröffentlichung erzeugt eine neue Version</span>
+    </div>
+
+    <form method="post" action="/sites/{{.Site.ID}}/update" enctype="multipart/form-data" class="stack">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+
+      <div class="stack tight">
+        <h3>Inhalt</h3>
+        {{if .IsBundle}}
+        <div class="notice">
+          <strong>Multi-File-Bundle.</strong> Diese Seite besteht aus mehreren Dateien. Eine neue ZIP-Datei ersetzt den gesamten Inhalt; der Pfad bleibt gleich.
+        </div>
+        <label class="field">
+          <span class="field-label">Neue ZIP-Datei <span class="optional">optional</span></span>
+          <input type="file" name="file" accept=".zip,application/zip">
+        </label>
+        {{else}}
+        <label class="field">
+          <span class="field-label">HTML-Inhalt</span>
+          <textarea name="html" class="code-input" rows="18" spellcheck="false">{{.Content}}</textarea>
+        </label>
+        <label class="field">
+          <span class="field-label">Oder neue HTML-Datei <span class="optional">optional, hat Vorrang</span></span>
+          <input type="file" name="file" accept=".html,.htm,text/html">
+        </label>
+        {{end}}
+      </div>
+
+      <hr class="section-divider">
+
+      <div class="stack tight">
+        <h3>Einstellungen</h3>
+        <div class="two-col">
+          <label class="field">
+            <span class="field-label">Titel <span class="optional">optional</span></span>
+            <input type="text" name="title" value="{{.Site.Title}}" maxlength="120" placeholder="Optionaler Titel">
+          </label>
+
+          <label class="field">
+            <span class="field-label">Zugriff</span>
+            <select name="mode" id="mode-select">
+              <option value="public" {{if eq .Site.AccessMode "public"}}selected{{end}}>Öffentlich</option>
+              <option value="pin" {{if eq .Site.AccessMode "pin"}}selected{{end}}>PIN</option>
+              <option value="password" {{if eq .Site.AccessMode "password"}}selected{{end}}>Passwort</option>
+              <option value="pocketid" {{if eq .Site.AccessMode "pocketid"}}selected{{end}} {{if not .PagesOIDC}}disabled{{end}}>Pocket-ID</option>
+            </select>
+            {{if not .PagesOIDC}}<span class="field-help">Pocket-ID für Seiten ist nicht konfiguriert.</span>{{end}}
+          </label>
+        </div>
+
+        <label class="field mode-field" data-mode="pin" hidden>
+          <span class="field-label">Neue PIN <span class="optional">leer lassen = unverändert</span></span>
+          <input type="password" name="pin" inputmode="numeric" pattern="[0-9]{6,12}" maxlength="12" placeholder="6–12 Ziffern" autocomplete="new-password">
+        </label>
+
+        <label class="field mode-field" data-mode="password" hidden>
+          <span class="field-label">Neues Passwort <span class="optional">leer lassen = unverändert</span></span>
+          <input type="password" name="password" minlength="8" maxlength="200" placeholder="mindestens 8 Zeichen" autocomplete="new-password">
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Neue Version deployen</button>
+        <span class="note">Ohne Inhalt oder Datei werden nur die Einstellungen gespeichert.</span>
+      </div>
+    </form>
+  </section>
+
+  <div class="side-stack">
+    <section class="panel" aria-labelledby="share-title">
+      <div class="panel-head">
+        <h2 id="share-title">Share-Links</h2>
+      </div>
+
+      {{if .NewShareURL}}
+      <div class="token-box">
+        <span class="field-label">Neuer Link — jetzt kopieren</span>
+        <code>{{.NewShareURL}}</code>
+        <div class="token-actions">
+          <button class="btn btn-small" type="button" data-copy="{{.NewShareURL}}">Kopieren</button>
+        </div>
+      </div>
+      {{end}}
+
+      <form method="post" action="/sites/{{.Site.ID}}/share" class="stack tight">
+        <input type="hidden" name="csrf" value="{{.CSRF}}">
+        <div class="two-col">
+          <label class="field">
+            <span class="field-label">Gültig (Tage)</span>
+            <input type="number" name="days" value="7" min="1" max="365">
+          </label>
+          <label class="field">
+            <span class="field-label">Max. Nutzungen</span>
+            <input type="number" name="uses" value="0" min="0" max="100000">
+          </label>
+        </div>
+        <button class="btn btn-block" type="submit">Share-Link erstellen</button>
+        <p class="hint">0 Nutzungen = unbegrenzt. Der Link gewährt temporären Zugriff, auch bei PIN, Passwort oder Pocket-ID.</p>
+      </form>
+
+      {{if .Shares}}
+      <ul class="token-list">
+        {{range .Shares}}
+        <li>
+          <span class="token-meta">
+            <span class="token-name">
+              {{if gt .RevokedAt 0}}<span class="status"><span class="dot dot-dead"></span>widerrufen</span>
+              {{else if le .ExpiresAt now}}<span class="status"><span class="dot dot-warn"></span>abgelaufen</span>
+              {{else}}<span class="status"><span class="dot dot-live"></span>aktiv bis {{date .ExpiresAt}}</span>{{end}}
+            </span>
+            <span class="token-sub">{{.Uses}}{{if gt .MaxUses 0}}/{{.MaxUses}}{{end}} Nutzungen</span>
+          </span>
+          {{if eq .RevokedAt 0}}
+          <form method="post" action="/shares/{{.ID}}/revoke" class="inline-form">
+            <input type="hidden" name="csrf" value="{{$.CSRF}}">
+            <input type="hidden" name="site_id" value="{{$.Site.ID}}">
+            <button class="btn btn-small btn-danger-ghost" type="submit" data-confirm="Share-Link widerrufen? Bereits geöffnete Sitzungen verlieren den Zugriff.">Widerrufen</button>
+          </form>
+          {{end}}
+        </li>
+        {{end}}
+      </ul>
+      {{end}}
+    </section>
+
+    <section class="panel danger-panel" aria-labelledby="danger-title">
+      <div class="panel-head">
+        <h2 id="danger-title">Gefahrenzone</h2>
+      </div>
+      <p class="hint">Löscht die Seite mit allen Versionen und Share-Links. Das lässt sich nicht rückgängig machen.</p>
+      <form method="post" action="/sites/{{.Site.ID}}/delete">
+        <input type="hidden" name="csrf" value="{{.CSRF}}">
+        <button class="btn btn-danger btn-block" type="submit" data-confirm="Seite „{{.Site.Path}}“ wirklich löschen? Alle Versionen werden entfernt.">Seite löschen</button>
+      </form>
+    </section>
+  </div>
+</div>
+{{end}}

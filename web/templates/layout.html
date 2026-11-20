@@ -1,0 +1,61 @@
+{{define "icon-copy"}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.75" y="5.75" width="7.75" height="7.75" rx="1.5"/><path d="M10.25 5.75V4a1.75 1.75 0 0 0-1.75-1.75H4A1.75 1.75 0 0 0 2.25 4v4.5A1.75 1.75 0 0 0 4 10.25h1.75"/></svg>{{end}}
+{{define "icon-external"}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 2.75H13.25V6.5"/><path d="M13 3 7.75 8.25"/><path d="M11.5 9.5v2.75A1.75 1.75 0 0 1 9.75 14h-6A1.75 1.75 0 0 1 2 12.25v-6A1.75 1.75 0 0 1 3.75 4.5H6.5"/></svg>{{end}}
+{{define "icon-lock"}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="6.75" rx="1.5"/><path d="M5.5 7V5.25a2.5 2.5 0 0 1 5 0V7"/></svg>{{end}}
+{{define "icon-unlock"}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="6.75" rx="1.5"/><path d="M5.5 7V5.25a2.5 2.5 0 0 1 4.63-1.3"/></svg>{{end}}
+{{define "icon-upload"}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.75V2.75"/><path d="M5.25 5.5 8 2.75l2.75 2.75"/><path d="M2.75 10v2.25A1.75 1.75 0 0 0 4.5 14h7a1.75 1.75 0 0 0 1.75-1.75V10"/></svg>{{end}}
+{{define "icon-check"}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="m5.4 8.2 1.8 1.8 3.4-3.7"/></svg>{{end}}
+{{define "icon-alert"}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.75v3.9"/><path d="M8 11.25h.01"/></svg>{{end}}
+{{define "icon-file"}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.25 2.25h4.5l3 3V13a.75.75 0 0 1-.75.75H4.25A.75.75 0 0 1 3.5 13V3a.75.75 0 0 1 .75-.75Z"/><path d="M8.5 2.5V5.5h3"/></svg>{{end}}
+{{define "icon-arrow-left"}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.5 8h-9"/><path d="M7 4.5 3.5 8 7 11.5"/></svg>{{end}}
+{{define "icon-layers"}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.25 14 5.5 8 8.75 2 5.5l6-3.25Z"/><path d="M2 9.25 8 12.5l6-3.25"/></svg>{{end}}
+{{define "mark"}}<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 5.5h12.5L25 11v15.5H7V5.5Z" stroke="currentColor" stroke-width="2"/><path d="M19.5 5.5V11H25" stroke="currentColor" stroke-width="2"/><path d="M11 16h10M11 20h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>{{end}}
+
+{{define "layout"}}<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{.Title}} · dropy</title>
+  <link rel="stylesheet" href="/static/admin.css">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <a class="skip-link" href="#main">Zum Inhalt springen</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/">
+        <span class="brand-mark">{{template "mark" .}}</span>
+        <span class="brand-name">dropy</span>
+      </a>
+      {{if .User}}
+      <nav class="topnav" aria-label="Hauptnavigation">
+        <a href="/"{{if or (eq .Page "dashboard") (eq .Page "edit") (eq .Page "versions")}} class="active" aria-current="page"{{end}}>Seiten</a>
+        <a href="/#api">API &amp; CLI</a>
+      </nav>
+      <div class="topbar-right">
+        <span class="user-chip" title="{{.User.Email}}">{{if .User.Name}}{{.User.Name}}{{else}}{{.User.Email}}{{end}}</span>
+        <form method="post" action="/logout" class="inline-form">
+          <input type="hidden" name="csrf" value="{{.CSRF}}">
+          <button class="btn btn-ghost btn-small" type="submit">Abmelden</button>
+        </form>
+      </div>
+      {{end}}
+    </div>
+  </header>
+
+  <main class="wrap" id="main">
+    {{if .Msg}}<div class="flash flash-ok" role="status">{{template "icon-check" .}}<span>{{.Msg}}</span></div>{{end}}
+    {{if .Err}}<div class="flash flash-err" role="alert">{{template "icon-alert" .}}<span>{{.Err}}</span></div>{{end}}
+    {{template "content" .}}
+  </main>
+
+  <footer class="footer">
+    <span>dropy · statisches HTML-Hosting</span>
+    <span class="mono">{{.PublicBase}}</span>
+  </footer>
+
+  <script src="/static/admin.js" defer></script>
+</body>
+</html>{{end}}

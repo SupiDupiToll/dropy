@@ -1,0 +1,78 @@
+{{define "content"}}
+<div class="page-head">
+  <div>
+    <a class="back" href="/sites/{{.Site.ID}}/edit">{{template "icon-arrow-left" .}} Bearbeiten</a>
+    <h1>Versionen</h1>
+    <p class="sub">
+      <a class="mono" href="{{siteURL .PublicBase .Site.Path}}" target="_blank" rel="noopener">{{siteURL .PublicBase .Site.Path}}</a>
+      <span class="sep">·</span>
+      <span>{{len .Versions}} {{if eq (len .Versions) 1}}Version{{else}}Versionen{{end}}</span>
+    </p>
+  </div>
+  <div class="head-actions">
+    <a class="btn" href="{{siteURL .PublicBase .Site.Path}}" target="_blank" rel="noopener">{{template "icon-external" .}} Öffnen</a>
+  </div>
+</div>
+
+<section class="register" aria-labelledby="versions-title">
+  <div class="register-head">
+    <div class="title-row">
+      <h2 id="versions-title">Verlauf</h2>
+      <span class="count">{{len .Versions}}</span>
+    </div>
+    <span class="hint">Die aktive Version wird nie automatisch entfernt</span>
+  </div>
+
+  {{if .Versions}}
+  <div class="table-wrap">
+    <table class="data">
+      <caption class="sr-only">Versionen dieser Seite, neueste zuerst</caption>
+      <thead>
+        <tr>
+          <th scope="col">Status</th>
+          <th scope="col">Erstellt</th>
+          <th scope="col" class="right">Größe</th>
+          <th scope="col" class="right">Dateien</th>
+          <th scope="col">SHA-256</th>
+          <th scope="col" class="col-actions"><span class="sr-only">Aktionen</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Versions}}
+        <tr{{if eq .ID $.Site.CurrentVersionID}} class="current"{{end}}>
+          <td class="cell-main">
+            {{if eq .ID $.Site.CurrentVersionID}}
+            <span class="status"><span class="dot dot-live"></span>Aktiv</span>
+            {{else}}
+            <span class="status muted"><span class="dot"></span>Archiv</span>
+            {{end}}
+          </td>
+          <td class="col-meta col-num">{{date .CreatedAt}}</td>
+          <td class="col-meta col-num right">{{bytes .Size}}</td>
+          <td class="col-meta col-num right">{{.FileCount}}</td>
+          <td class="col-meta version-hash">{{short .SHA256 12}}</td>
+          <td class="col-actions">
+            <div class="row-actions">
+              <a href="/sites/{{$.Site.ID}}/versions/{{.ID}}/download">ZIP</a>
+              {{if ne .ID $.Site.CurrentVersionID}}
+              <form method="post" action="/sites/{{$.Site.ID}}/rollback/{{.ID}}" class="inline-form">
+                <input type="hidden" name="csrf" value="{{$.CSRF}}">
+                <button type="submit" data-confirm="Diese Version als aktive Version setzen? Die Seite zeigt danach diesen Stand.">Rollback</button>
+              </form>
+              {{end}}
+            </div>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="empty">
+    {{template "icon-layers" .}}
+    <strong>Keine Versionen</strong>
+    <span>Für diese Seite wurde noch nichts veröffentlicht.</span>
+  </div>
+  {{end}}
+</section>
+{{end}}

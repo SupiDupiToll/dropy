@@ -1,0 +1,242 @@
+{{define "content"}}
+<div class="page-head">
+  <div>
+    <h1>Seiten</h1>
+    <p class="sub">
+      <span>{{len .Sites}} {{if eq (len .Sites) 1}}Seite{{else}}Seiten{{end}}</span>
+      <span class="sep">·</span>
+      <span>Basis <a class="mono" href="{{.PublicBase}}" target="_blank" rel="noopener">{{.PublicBase}}</a></span>
+    </p>
+  </div>
+</div>
+
+<section class="composer" aria-labelledby="deploy-title">
+  <div class="composer-head">
+    <h2 id="deploy-title">Neue Seite deployen</h2>
+    <span class="hint">Bestehender Pfad wird zur neuen Version</span>
+  </div>
+
+  <form id="deploy-form" method="post" action="/deploy" enctype="multipart/form-data">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <div class="composer-body">
+
+      <div class="segmented" role="tablist" aria-label="Eingabemethode">
+        <button type="button" class="seg active" id="tab-file" data-tab="file" role="tab" aria-selected="true" aria-controls="panel-file">Datei</button>
+        <button type="button" class="seg" id="tab-paste" data-tab="paste" role="tab" aria-selected="false" aria-controls="panel-paste" tabindex="-1">HTML einfügen</button>
+      </div>
+
+      <div id="panel-file" role="tabpanel" aria-labelledby="tab-file">
+        <label class="dropzone" id="dropzone">
+          <input id="file-input" type="file" name="file" accept="{{if .MultiFile}}.html,.htm,.zip,text/html,application/zip{{else}}.html,.htm,text/html{{end}}">
+          <span class="dropzone-icon">{{template "icon-upload" .}}</span>
+          <span class="dropzone-text">
+            <span class="dropzone-title">HTML-Datei ablegen oder auswählen</span>
+            <span class="dropzone-sub" id="dropzone-sub">index.html{{if .MultiFile}} · oder ZIP-Bundle{{end}}</span>
+          </span>
+        </label>
+      </div>
+
+      <div id="panel-paste" role="tabpanel" aria-labelledby="tab-paste" hidden>
+        <label class="field">
+          <span class="field-label">HTML-Inhalt</span>
+          <textarea name="html" id="html-input" class="code-input" rows="10" spellcheck="false" placeholder="<!doctype html>&#10;<html lang=&quot;de&quot;>…</html>"></textarea>
+        </label>
+      </div>
+
+      {{if .MultiFile}}
+      <label class="check">
+        <input type="checkbox" name="multi" value="1">
+        <span>ZIP-Bundle (index.html plus Assets), Multi-File ist aktiv</span>
+      </label>
+      {{end}}
+
+      <div class="composer-grid">
+        <label class="field span-2">
+          <span class="field-label">Pfad</span>
+          <span class="input-prefix">
+            <span class="prefix">{{.PublicBase}}/</span>
+            <input type="text" name="path" id="path-input" value="{{.Form.Path}}" placeholder="meine-seite" required pattern="[a-z0-9-]+(/[a-z0-9-]+){0,3}" autocomplete="off" spellcheck="false" list="known-paths">
+          </span>
+          <span class="field-help">a–z, 0–9, Bindestrich · bis zu 4 Ebenen, z. B. <code>reports/2026/q1</code></span>
+        </label>
+
+        <label class="field">
+          <span class="field-label">Titel <span class="optional">optional</span></span>
+          <input type="text" name="title" value="{{.Form.Title}}" maxlength="120" placeholder="Meine Demo">
+        </label>
+
+        <label class="field">
+          <span class="field-label">Zugriff</span>
+          <select name="mode" id="mode-select">
+            <option value="public" {{if eq .Form.Mode "public"}}selected{{end}}>Öffentlich</option>
+            <option value="pin" {{if eq .Form.Mode "pin"}}selected{{end}}>PIN</option>
+            <option value="password" {{if eq .Form.Mode "password"}}selected{{end}}>Passwort</option>
+            <option value="pocketid" {{if eq .Form.Mode "pocketid"}}selected{{end}} {{if not .PagesOIDC}}disabled{{end}}>Pocket-ID</option>
+          </select>
+          {{if not .PagesOIDC}}<span class="field-help">Pocket-ID für Seiten ist nicht konfiguriert.</span>{{end}}
+        </label>
+
+        <label class="field span-2 mode-field" data-mode="pin" hidden>
+          <span class="field-label">PIN</span>
+          <input type="password" name="pin" inputmode="numeric" pattern="[0-9]{6,12}" maxlength="12" placeholder="6–12 Ziffern" autocomplete="new-password">
+        </label>
+
+        <label class="field span-2 mode-field" data-mode="password" hidden>
+          <span class="field-label">Passwort</span>
+          <input type="password" name="password" minlength="8" maxlength="200" placeholder="mindestens 8 Zeichen" autocomplete="new-password">
+        </label>
+      </div>
+
+      <datalist id="known-paths">
+        {{range .Sites}}<option value="{{.Path}}"></option>{{end}}
+      </datalist>
+    </div>
+
+    <div class="composer-foot">
+      <p class="deploy-summary" id="deploy-summary" aria-live="polite" data-state="idle">
+        <span class="tag" id="deploy-tag">Neu</span>
+        <span class="target" id="deploy-target">Pfad wählen, z. B. meine-seite</span>
+      </p>
+      <button class="btn btn-primary" type="submit" id="deploy-submit">
+        <span class="btn-label">Deployen</span>
+        <span class="spinner" hidden aria-hidden="true"></span>
+      </button>
+    </div>
+  </form>
+</section>
+
+<section class="register" id="seiten" aria-labelledby="register-title">
+  <div class="register-head">
+    <div class="title-row">
+      <h2 id="register-title">Veröffentlichte Seiten</h2>
+      <span class="count" id="site-count">{{len .Sites}}</span>
+    </div>
+    {{if .Sites}}
+    <div class="register-tools">
+      <label class="sr-only" for="site-search">Seiten filtern</label>
+      <input class="search" id="site-search" type="search" placeholder="Nach Pfad, Titel oder Zugriff filtern" autocomplete="off">
+    </div>
+    {{end}}
+  </div>
+
+  {{if .Sites}}
+  <div class="table-wrap">
+    <table class="data">
+      <caption class="sr-only">Veröffentlichte Seiten mit Zugriff, Größe, Version und Datum der letzten Veröffentlichung</caption>
+      <thead>
+        <tr>
+          <th scope="col">Seite</th>
+          <th scope="col">Zugriff</th>
+          <th scope="col" class="right">Größe</th>
+          <th scope="col">Version</th>
+          <th scope="col">Aktualisiert</th>
+          <th scope="col" class="col-actions"><span class="sr-only">Aktionen</span></th>
+        </tr>
+      </thead>
+      <tbody id="site-list">
+        {{range .Sites}}
+        <tr data-search="{{.Path}} {{.Title}} {{modeLabel .AccessMode}}">
+          <td class="cell-main">
+            <div class="cell-title">
+              <a class="name" href="/sites/{{.ID}}/edit">{{if .Title}}{{.Title}}{{else}}{{.Path}}{{end}}</a>
+              <span class="path"><span class="base">{{$.PublicBase}}/</span>{{.Path}}/</span>
+            </div>
+          </td>
+          <td class="col-meta">
+            {{if eq .AccessMode "public"}}
+            <span class="access open">{{template "icon-unlock" $}} {{modeLabel .AccessMode}}</span>
+            {{else}}
+            <span class="access">{{template "icon-lock" $}} {{modeLabel .AccessMode}}</span>
+            {{end}}
+          </td>
+          <td class="col-meta col-num right">{{with .Current}}{{bytes .Size}}{{else}}—{{end}}</td>
+          <td class="col-meta version-hash">{{with .Current}}{{short .SHA256 8}}{{else}}—{{end}}</td>
+          <td class="col-meta col-num"{{with .Current}} title="{{date .CreatedAt}}"{{end}}>{{with .Current}}{{dateShort .CreatedAt}}{{else}}—{{end}}</td>
+          <td class="col-actions">
+            <div class="row-actions">
+              <a href="{{siteURL $.PublicBase .Path}}" target="_blank" rel="noopener">Öffnen</a>
+              <a href="/sites/{{.ID}}/edit">Bearbeiten</a>
+              <a href="/sites/{{.ID}}/versions">Versionen</a>
+              <button type="button" class="btn-icon" data-copy="{{siteURL $.PublicBase .Path}}" aria-label="Link zu {{.Path}} kopieren" title="Link kopieren">{{template "icon-copy" $}}</button>
+            </div>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  <div class="empty" id="site-empty" hidden>
+    <strong>Keine Seite passt zum Filter</strong>
+    <span>Anderen Suchbegriff versuchen oder das Feld leeren.</span>
+  </div>
+  {{else}}
+  <div class="empty">
+    {{template "icon-file" .}}
+    <strong>Noch keine Seiten</strong>
+    <span>Lade oben eine HTML-Datei hoch oder füge Markup ein — die Seite ist sofort unter ihrem Pfad erreichbar.</span>
+    <div class="empty-actions">
+      <button class="btn btn-small" type="button" data-focus-file>Datei auswählen</button>
+    </div>
+  </div>
+  {{end}}
+</section>
+
+<section class="panel api-section" id="api" aria-labelledby="api-title">
+  <div class="panel-head">
+    <h2 id="api-title">API &amp; CLI</h2>
+    <span class="hint">Deployen per Token, z. B. aus einem Skript oder CI-Lauf</span>
+  </div>
+
+  <div class="api-grid">
+    <div>
+      <h3>Token erstellen</h3>
+      <form method="post" action="/tokens" class="row-form">
+        <input type="hidden" name="csrf" value="{{.CSRF}}">
+        <label class="sr-only" for="token-name">Name des Tokens</label>
+        <input id="token-name" type="text" name="name" placeholder="z. B. laptop" maxlength="80" required>
+        <button class="btn" type="submit">Erstellen</button>
+      </form>
+      <p class="hint">Der Token wird nur einmal angezeigt. Widerrufen macht ihn sofort ungültig.</p>
+
+      {{if .NewToken}}
+      <div class="token-box">
+        <span class="field-label">Neuer Token, nur jetzt sichtbar</span>
+        <code>{{.NewToken}}</code>
+        <div class="token-actions">
+          <button class="btn btn-small" type="button" data-copy="{{.NewToken}}">Kopieren</button>
+        </div>
+      </div>
+      {{end}}
+
+      {{if .Tokens}}
+      <ul class="token-list">
+        {{range .Tokens}}
+        <li>
+          <span class="token-meta">
+            <span class="token-name">{{.Name}}</span>
+            <span class="token-sub">erstellt {{date .CreatedAt}}{{if .LastUsedAt}} · zuletzt {{date .LastUsedAt}}{{end}}</span>
+          </span>
+          <form method="post" action="/tokens/{{.ID}}/revoke" class="inline-form">
+            <input type="hidden" name="csrf" value="{{$.CSRF}}">
+            <button class="btn btn-small btn-danger-ghost" type="submit" data-confirm="Token „{{.Name}}“ widerrufen? Deployments damit schlagen danach fehl.">Widerrufen</button>
+          </form>
+        </li>
+        {{end}}
+      </ul>
+      {{end}}
+    </div>
+
+    <div>
+      <h3>Beispiel</h3>
+      <pre class="snippet"><code>curl -X POST {{.AdminBase}}/api/sites \
+  -H "Authorization: Bearer dropy_…" \
+  -F file=@index.html \
+  -F path=meine-seite \
+  -F mode=public</code></pre>
+      <p class="hint">Mit installiertem Binary geht dasselbe kürzer:</p>
+      <pre class="snippet"><code>dropy deploy --file index.html \
+  --path meine-seite --mode public</code></pre>
+    </div>
+  </div>
+</section>
+{{end}}
